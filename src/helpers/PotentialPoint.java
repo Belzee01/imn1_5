@@ -10,7 +10,8 @@ public class PotentialPoint {
     private Double wir;
 
     private Double density;
-    private MyPair velocity;
+    private Double oldDensity;
+    private Velocity velocity;
 
     public PotentialPoint() {
         x = 0.0;
@@ -20,10 +21,11 @@ public class PotentialPoint {
         value = 0.0;
         this.wir = 0.0;
         this.density = 0.0;
-        this.velocity = new MyPair(0.0, 0.0);
+        this.oldDensity = 0.0;
+        this.velocity = new Velocity(0.0, 0.0);
     }
 
-    public PotentialPoint(Double x, Double y, Boolean isObstacle, Double value, Double wir, Double density, MyPair velocity) {
+    public PotentialPoint(Double x, Double y, Boolean isObstacle, Double value, Double wir, Double density, Velocity velocity) {
         this.x = x;
         this.y = y;
         this.isObstacle = isObstacle;
@@ -97,12 +99,20 @@ public class PotentialPoint {
         this.density = density;
     }
 
-    public MyPair getVelocity() {
+    public Velocity getVelocity() {
         return velocity;
     }
 
-    public void setVelocity(MyPair velocity) {
+    public void setVelocity(Velocity velocity) {
         this.velocity = velocity;
+    }
+
+    public Double getOldDensity() {
+        return oldDensity;
+    }
+
+    public void setOldDensity(Double oldDensity) {
+        this.oldDensity = oldDensity;
     }
 
     @Override

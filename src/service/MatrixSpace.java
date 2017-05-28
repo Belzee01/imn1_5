@@ -151,6 +151,17 @@ public class MatrixSpace {
         System.out.println("All obstacle flags set");
     }
 
+    public void moveOldDensity() {
+        PotentialPoint[][] potentialPoints = getDoubleMatrix().getMatrix();
+
+        for (int i = 0; i < potentialPoints.length; i++) {
+            for (int j = 0; j < potentialPoints[0].length; j++) {
+                potentialPoints[i][j].setOldDensity(potentialPoints[i][j].getDensity());
+            }
+        }
+        this.getDoubleMatrix().setMatrix(potentialPoints);
+    }
+
     private int getIndexX(double x) {
         return (int) Math.round(((x)));
     }
