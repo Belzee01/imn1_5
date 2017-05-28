@@ -48,8 +48,8 @@ public class Main {
                 MatrixBuilder.buildDoubleMatrix(301, 91),
                 0.01
         );
-        WariantAAlt wariantAAlt1 = new WariantAAlt(matrixSpace1, "predkosc.dat");
-        wariantAAlt1.executeLeapFrog(20, 25);
+        WariantAAlt wariantAAlt1 = new WariantAAlt(matrixSpace1, "predkosc.dat", 2.0);
+        wariantAAlt1.executeLaxFriedrich(20, 25);
 
         CustomFileWriter.writeToFile(
                 wariantAAlt1.getDensityBuffer().toString(), "zad3_den.dat"
@@ -59,9 +59,11 @@ public class Main {
     public static void main(String[] args) {
 
 
-        zadanie1();
+//        zadanie1();
 
-        zadanie2();
+//        zadanie2();
+
+        zadanie3();
         System.out.println("Hello World!");
     }
 }

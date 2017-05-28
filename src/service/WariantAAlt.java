@@ -79,6 +79,35 @@ public class WariantAAlt {
         evaluateInitialDensity();
     }
 
+    public WariantAAlt(MatrixSpace matrixSpace, String filename, double divider) {
+        this.matrixSpace = matrixSpace;
+        this.jump = matrixSpace.getJump();
+        this.densityBuffer = new DensityBuffer(301, 91, jump);
+
+        PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
+        // Set up U and V velocities from file
+        loadVelocitiesFromFile(filename);
+        //Domyslna wartosc maksymalnej predkosci
+        calculateInitialMaximumVelocity(potentialPoints);
+
+        //Obliczenie predkosc dla U oraz aktualizacja maksymalnej predkosci na podstawie nowych wartosci skladowych predkosci
+        for (int i = 0; i < 301; i++) {
+            for (int j = 0; j < 91; j++) {
+                Double tempVelocity = Math.sqrt(Math.pow(potentialPoints[i][j].getVelocity().getU(), 2.0) +
+                        Math.pow(potentialPoints[i][j].getVelocity().getV(), 2.0)
+                );
+                if (tempVelocity > this.maximumVelocity)
+                    this.maximumVelocity = tempVelocity;
+            }
+        }
+        matrixSpace.getDoubleMatrix().setMatrix(potentialPoints);
+
+        this.delta = jump / (4.0 * this.maximumVelocity);
+        this.delta = this.delta / divider;
+
+        evaluateInitialDensity();
+    }
+
     private void loadVelocitiesFromFile(String filename) {
         PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
 
@@ -141,6 +170,29 @@ public class WariantAAlt {
         return newDensity;
     }
 
+    private double[][] generateLaxFriedrichDensity() {
+        PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
+
+        int k = 0;
+        double[][] newDensity = new double[301][91];
+        for (int i = 1; i < 300; i++) {
+            for (int j = 1; j < 90; j++) {
+                if (!potentialPoints[i][j].getObstacle()) {
+                    Double value = ((potentialPoints[i + 1][j].getDensity() + potentialPoints[i - 1][j].getDensity() +
+                            potentialPoints[i][j - 1].getDensity() + potentialPoints[i][j + 1].getDensity()) / 4.0) -
+                            this.delta * ((potentialPoints[i][j].getVelocity().getU() *
+                                    ((potentialPoints[i + 1][j].getDensity() - potentialPoints[i - 1][j].getDensity())/(2.0*jump))) +
+                                    (potentialPoints[i][j].getVelocity().getV() *
+                                            ((potentialPoints[i][j+1].getDensity() - potentialPoints[i][j-1].getDensity())/(2.0*jump))));
+
+                            newDensity[i][j] = value;
+                }
+            }
+        }
+
+        return newDensity;
+    }
+
     public void executeLeapFrog(double iterations, int frequency) {
 
         double k = 0;
@@ -162,11 +214,36 @@ public class WariantAAlt {
             Double I = calculateI();
             System.out.println("I value : " + I);
 
-            if (counter++%(int)((iterations/delta)/frequency) == 0) {
+            if (counter++ % (int) ((iterations / delta) / frequency) == 0) {
                 densityBuffer.addDensityMatrix(matrixSpace.getDoubleMatrix().getMatrix());
             }
         }
+    }
 
+    public void executeLaxFriedrich(double iterations, int frequency) {
+
+        double k = 0;
+        int counter = 0;
+
+        while (k < iterations) {
+
+            /// Generate new denisty based on old and current density
+            double[][] density = generateLaxFriedrichDensity();
+
+            /// Reassign current density on old density
+//            movePotentialPointDensityValues();
+
+            /// Assign newly generated density as current density
+            reassignNewOnCurrentDensity(density);
+            k += this.delta;
+
+            Double I = calculateI();
+            System.out.println("I value : " + I);
+
+            if (counter++ % (int) ((iterations / delta) / frequency) == 0) {
+                densityBuffer.addDensityMatrix(matrixSpace.getDoubleMatrix().getMatrix());
+            }
+        }
     }
 
     private void reassignNewOnCurrentDensity(double[][] newDensity) {

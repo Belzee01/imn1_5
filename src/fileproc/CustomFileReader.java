@@ -25,6 +25,8 @@ public class CustomFileReader {
 
                         potentialPoints[i][j].getVelocity().setU(Double.valueOf(lines.get(2)));
                         potentialPoints[i][j].getVelocity().setV(Double.valueOf(lines.get(3)));
+                        potentialPoints[i][j].setObstacle(Integer.valueOf(lines.get(4)) == 0);
+
                     }
                 }
                 System.out.println("K = " + k++);
