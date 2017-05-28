@@ -19,7 +19,7 @@ public class WariantAAlt {
     public WariantAAlt(MatrixSpace matrixSpace) {
         this.matrixSpace = matrixSpace;
         this.jump = matrixSpace.getJump();
-        this.densityBuffer = new DensityBuffer(301, 91);
+        this.densityBuffer = new DensityBuffer(301, 91, jump);
 
         PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
 
@@ -32,8 +32,8 @@ public class WariantAAlt {
         for (int i = 0; i < 301; i++) {
             for (int j = 0; j < 91; j++) {
                 potentialPoints[i][j].getVelocity().setU(evaluateVelocity(j * jump));
-                Double tempVelocity = Math.sqrt(Math.pow(potentialPoints[0][0].getVelocity().getU(), 2.0) +
-                        Math.pow(potentialPoints[0][0].getVelocity().getV(), 2.0)
+                Double tempVelocity = Math.sqrt(Math.pow(potentialPoints[i][j].getVelocity().getU(), 2.0) +
+                        Math.pow(potentialPoints[i][j].getVelocity().getV(), 2.0)
                 );
                 if (tempVelocity > this.maximumVelocity)
                     this.maximumVelocity = tempVelocity;
@@ -84,16 +84,16 @@ public class WariantAAlt {
     }
 
 
-    private Double[][] generateNextDensity() {
+    private double[][] generateNextDensity() {
         PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
 
         int k = 0;
-        Double[][] newDensity = new Double[301][91];
+        double[][] newDensity = new double[301][91];
         for (int i = 1; i < 300; i++) {
             for (int j = 1; j < 90; j++) {
                 Double value = potentialPoints[i][j].getOldDensity() -
-                        this.delta * (potentialPoints[i][j].getVelocity().getU() * ((potentialPoints[i + 1][j].getDensity() - potentialPoints[i - 1][j].getOldDensity()) / (jump)) +
-                                potentialPoints[i][j].getVelocity().getV() * ((potentialPoints[i][j + 1].getDensity() - potentialPoints[i][j - 1].getOldDensity()) / (jump)));
+                        this.delta * (potentialPoints[i][j].getVelocity().getU() * ((potentialPoints[i + 1][j].getDensity() - potentialPoints[i - 1][j].getDensity()) / (jump)) +
+                                potentialPoints[i][j].getVelocity().getV() * ((potentialPoints[i][j + 1].getDensity() - potentialPoints[i][j - 1].getDensity()) / (jump)));
 
                 newDensity[i][j] = value;
             }
@@ -105,12 +105,13 @@ public class WariantAAlt {
     public void executeLeapFrog(double iterations, int frr) {
 
         double k = 0;
+        int counter = 0;
 
         while (k < iterations) {
-            System.out.println("Iteration delta : " + k);
+            //System.out.println("Iteration delta : " + k);
 
             /// Generate new denisty based on old and current density
-            Double[][] density = generateNextDensity();
+            double[][] density = generateNextDensity();
 
             /// Reassign current density on old density
             movePotentialPointDensityValues();
@@ -121,11 +122,15 @@ public class WariantAAlt {
 
             Double I = calculateI();
             System.out.println("I value : " + I);
+
+            if (counter++%(int)((iterations/delta)/frr) == 0) {
+                densityBuffer.addDensityMatrix(matrixSpace.getDoubleMatrix().getMatrix());
+            }
         }
 
     }
 
-    private void reassignNewOnCurrentDensity(Double[][] newDensity) {
+    private void reassignNewOnCurrentDensity(double[][] newDensity) {
         PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
 
         for (int i = 0; i < 301; i++) {
@@ -157,5 +162,9 @@ public class WariantAAlt {
 
     public MatrixSpace getMatrixSpace() {
         return matrixSpace;
+    }
+
+    public DensityBuffer getDensityBuffer() {
+        return densityBuffer;
     }
 }

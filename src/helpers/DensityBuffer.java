@@ -4,50 +4,65 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DensityBuffer {
-    private Double x;
-    private Double y;
+    private List<Double> x;
+    private List<Double> y;
 
-    Double[][] densityValues;
+    private int rows;
+    private int columns;
 
-    public DensityBuffer(Double x, Double y, Double[][] densityValues) {
-        this.x = x;
-        this.y = y;
-        this.densityValues = densityValues;
+    private List<double[]> densityValues;
+
+
+    public DensityBuffer(int rows, int columns, double jump) {
+        this.x = new ArrayList<>();
+        this.y = new ArrayList<>();
+
+        this.rows = rows;
+        this.columns = columns;
+
+        this.densityValues = new ArrayList<>();
+
+        initializeXY(jump);
     }
 
-    public DensityBuffer(int rows, int columns) {
-        this.x = 0.0;
-        this.y = 0.0;
-        this.densityValues = new Double[rows][columns];
+    private void initializeXY(double jump) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < columns; j++) {
+                Double x = j * jump;
+                Double y = i * jump;
+                this.x.add(x);
+                this.y.add(y);
+            }
+        }
     }
 
-    public DensityBuffer(Double x, Double y, int rows, int columns) {
-        this.x = x;
-        this.y = y;
-        this.densityValues = new Double[rows][columns];
+    public void addDensityMatrix(PotentialPoint[][] potentialPoints) {
+        double[] densityMatrix = new double[potentialPoints.length * potentialPoints[0].length];
+
+        int k = 0;
+        for (int i = 0; i < potentialPoints.length; i++) {
+            for (int j = 0; j < potentialPoints[0].length; j++) {
+                densityMatrix[k++] = potentialPoints[i][j].getDensity();
+            }
+        }
+        this.densityValues.add(densityMatrix);
     }
 
-    public Double getX() {
-        return x;
-    }
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
 
-    public void setX(Double x) {
-        this.x = x;
-    }
+        int k = 0;
+        for (int i = 0; i < this.densityValues.get(0).length; i++) {
+            sb.append(this.y.get(i)).append("\t").append(this.x.get(i)).append("\t");
+            for (int j = 0; j < this.densityValues.size(); j++) {
+                sb.append(this.densityValues.get(j)[i]).append("\t");
+            }
+            sb.append("\n");
+            if (++k%91 == 0.0 && k != 0)
+                sb.append("\n");
+        }
 
-    public Double getY() {
-        return y;
-    }
-
-    public void setY(Double y) {
-        this.y = y;
-    }
-
-    public Double[][] getDensityValues() {
-        return densityValues;
-    }
-
-    public void setDensityValues(Double[][] densityValues) {
-        this.densityValues = densityValues;
+        return sb.toString();
     }
 }
