@@ -1,5 +1,6 @@
 package service;
 
+import fileproc.CustomFileReader;
 import helpers.DensityBuffer;
 import helpers.PotentialPoint;
 
@@ -16,6 +17,12 @@ public class WariantAAlt {
 
     private DensityBuffer densityBuffer;
 
+    private void calculateInitialMaximumVelocity(PotentialPoint[][] potentialPoints) {
+        this.maximumVelocity = Math.sqrt(Math.pow(matrixSpace.getDoubleMatrix().getMatrix()[0][0].getVelocity().getU(), 2.0) +
+                Math.pow(matrixSpace.getDoubleMatrix().getMatrix()[0][0].getVelocity().getV(), 2.0)
+        );
+    }
+
     public WariantAAlt(MatrixSpace matrixSpace) {
         this.matrixSpace = matrixSpace;
         this.jump = matrixSpace.getJump();
@@ -24,9 +31,7 @@ public class WariantAAlt {
         PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
 
         //Domyslna wartosc maksymalnej predkosci
-        this.maximumVelocity = Math.sqrt(Math.pow(matrixSpace.getDoubleMatrix().getMatrix()[0][0].getVelocity().getU(), 2.0) +
-                Math.pow(matrixSpace.getDoubleMatrix().getMatrix()[0][0].getVelocity().getV(), 2.0)
-        );
+        calculateInitialMaximumVelocity(potentialPoints);
 
         //Obliczenie predkosc dla U oraz aktualizacja maksymalnej predkosci na podstawie nowych wartosci skladowych predkosci
         for (int i = 0; i < 301; i++) {
@@ -44,6 +49,40 @@ public class WariantAAlt {
         this.delta = jump / (4.0 * this.maximumVelocity);
 
         evaluateInitialDensity();
+    }
+
+    public WariantAAlt(MatrixSpace matrixSpace, String filename) {
+        this.matrixSpace = matrixSpace;
+        this.jump = matrixSpace.getJump();
+        this.densityBuffer = new DensityBuffer(301, 91, jump);
+
+        PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
+        // Set up U and V velocities from file
+        loadVelocitiesFromFile(filename);
+        //Domyslna wartosc maksymalnej predkosci
+        calculateInitialMaximumVelocity(potentialPoints);
+
+        //Obliczenie predkosc dla U oraz aktualizacja maksymalnej predkosci na podstawie nowych wartosci skladowych predkosci
+        for (int i = 0; i < 301; i++) {
+            for (int j = 0; j < 91; j++) {
+                Double tempVelocity = Math.sqrt(Math.pow(potentialPoints[i][j].getVelocity().getU(), 2.0) +
+                        Math.pow(potentialPoints[i][j].getVelocity().getV(), 2.0)
+                );
+                if (tempVelocity > this.maximumVelocity)
+                    this.maximumVelocity = tempVelocity;
+            }
+        }
+        matrixSpace.getDoubleMatrix().setMatrix(potentialPoints);
+
+        this.delta = jump / (4.0 * this.maximumVelocity);
+
+        evaluateInitialDensity();
+    }
+
+    private void loadVelocitiesFromFile(String filename) {
+        PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
+
+        CustomFileReader.readFromFile(filename, potentialPoints);
     }
 
     private void evaluateInitialDensity() {
@@ -102,7 +141,7 @@ public class WariantAAlt {
         return newDensity;
     }
 
-    public void executeLeapFrog(double iterations, int frr) {
+    public void executeLeapFrog(double iterations, int frequency) {
 
         double k = 0;
         int counter = 0;
@@ -123,7 +162,7 @@ public class WariantAAlt {
             Double I = calculateI();
             System.out.println("I value : " + I);
 
-            if (counter++%(int)((iterations/delta)/frr) == 0) {
+            if (counter++%(int)((iterations/delta)/frequency) == 0) {
                 densityBuffer.addDensityMatrix(matrixSpace.getDoubleMatrix().getMatrix());
             }
         }
