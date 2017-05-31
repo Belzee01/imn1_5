@@ -2,6 +2,7 @@ package service;
 
 import fileproc.CustomFileReader;
 import helpers.DensityBuffer;
+import helpers.IterationIntegralContainer;
 import helpers.PotentialPoint;
 
 public class WariantAAlt {
@@ -17,16 +18,25 @@ public class WariantAAlt {
 
     private DensityBuffer densityBuffer;
 
+    private IterationIntegralContainer integralIByIteration;
+    private IterationIntegralContainer packetByIteration;
+
     private void calculateInitialMaximumVelocity(PotentialPoint[][] potentialPoints) {
         this.maximumVelocity = Math.sqrt(Math.pow(matrixSpace.getDoubleMatrix().getMatrix()[0][0].getVelocity().getU(), 2.0) +
                 Math.pow(matrixSpace.getDoubleMatrix().getMatrix()[0][0].getVelocity().getV(), 2.0)
         );
     }
 
-    public WariantAAlt(MatrixSpace matrixSpace) {
-        this.matrixSpace = matrixSpace;
-        this.jump = matrixSpace.getJump();
+    public WariantAAlt() {
+        this.packetByIteration = new IterationIntegralContainer();
+        this.integralIByIteration = new IterationIntegralContainer();
         this.densityBuffer = new DensityBuffer(301, 91, jump);
+    }
+
+    public WariantAAlt(MatrixSpace matrixSpace) {
+        this();
+        this.matrixSpace = matrixSpace;
+        this.jump = this.matrixSpace.getJump();
 
         PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
 
@@ -52,9 +62,9 @@ public class WariantAAlt {
     }
 
     public WariantAAlt(MatrixSpace matrixSpace, String filename) {
+        this();
         this.matrixSpace = matrixSpace;
         this.jump = matrixSpace.getJump();
-        this.densityBuffer = new DensityBuffer(301, 91, jump);
 
         PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
         // Set up U and V velocities from file
@@ -80,9 +90,9 @@ public class WariantAAlt {
     }
 
     public WariantAAlt(MatrixSpace matrixSpace, String filename, double divider) {
+        this();
         this.matrixSpace = matrixSpace;
         this.jump = matrixSpace.getJump();
-        this.densityBuffer = new DensityBuffer(301, 91, jump);
 
         PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
         // Set up U and V velocities from file
@@ -151,6 +161,18 @@ public class WariantAAlt {
         return I;
     }
 
+    private Double calculatePacket() {
+        Double packet = 0.0;
+
+        PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
+        for (int i = 0; i < 301; i++) {
+            for (int j = 0; j < 91; j++) {
+                packet += i * jump * potentialPoints[i][j].getDensity();
+            }
+        }
+        return packet;
+    }
+
 
     private double[][] generateNextDensity() {
         PotentialPoint[][] potentialPoints = matrixSpace.getDoubleMatrix().getMatrix();
@@ -165,6 +187,13 @@ public class WariantAAlt {
 
                 newDensity[i][j] = value;
             }
+        }
+
+        for (int j = 0; j < 91; j++) {
+            newDensity[300][j] = potentialPoints[299][j].getDensity();
+        }
+        for (int j = 0; j < 91; j++) {
+            newDensity[0][j] = potentialPoints[300][j].getDensity();
         }
 
         return newDensity;
@@ -189,6 +218,12 @@ public class WariantAAlt {
                 }
             }
         }
+        for (int j = 0; j < 91; j++) {
+            newDensity[300][j] = newDensity[299][j];
+        }
+        for (int j = 0; j < 91; j++) {
+            newDensity[0][j] = newDensity[300][j];
+        }
 
         return newDensity;
     }
@@ -197,26 +232,33 @@ public class WariantAAlt {
 
         double k = 0;
         int counter = 0;
-
+        double[][] density;
+        double movieRange = iterations/delta;
+        int amountOfFrames = (int) (movieRange/frequency);
         while (k < iterations) {
             //System.out.println("Iteration delta : " + k);
 
             /// Generate new denisty based on old and current density
-            double[][] density = generateNextDensity();
+            density = generateNextDensity();
 
             /// Reassign current density on old density
             movePotentialPointDensityValues();
 
             /// Assign newly generated density as current density
             reassignNewOnCurrentDensity(density);
+            if (counter++ % amountOfFrames == 0) {
+                densityBuffer.addDensityMatrix(matrixSpace.getDoubleMatrix().getMatrix());
+            }
+
             k += this.delta;
 
             Double I = calculateI();
             System.out.println("I value : " + I);
+            this.integralIByIteration.add(counter+1, I);
 
-            if (counter++ % (int) ((iterations / delta) / frequency) == 0) {
-                densityBuffer.addDensityMatrix(matrixSpace.getDoubleMatrix().getMatrix());
-            }
+            Double pak = calculatePacket()/I;
+            System.out.println("Srodek pakietu: " + pak);
+            this.packetByIteration.add(counter+1, pak);
         }
     }
 
@@ -224,25 +266,28 @@ public class WariantAAlt {
 
         double k = 0;
         int counter = 0;
-
+        double movieRange = iterations/delta;
+        int amountOfFrames = (int) (movieRange/frequency);
         while (k < iterations) {
 
             /// Generate new denisty based on old and current density
             double[][] density = generateLaxFriedrichDensity();
 
-            /// Reassign current density on old density
-//            movePotentialPointDensityValues();
-
             /// Assign newly generated density as current density
             reassignNewOnCurrentDensity(density);
+            if (counter++ % amountOfFrames == 0) {
+                densityBuffer.addDensityMatrix(matrixSpace.getDoubleMatrix().getMatrix());
+            }
+
             k += this.delta;
 
             Double I = calculateI();
             System.out.println("I value : " + I);
+            this.integralIByIteration.add(counter+1, I);
 
-            if (counter++ % (int) ((iterations / delta) / frequency) == 0) {
-                densityBuffer.addDensityMatrix(matrixSpace.getDoubleMatrix().getMatrix());
-            }
+            Double pak = calculatePacket()/I;
+            System.out.println("Srodek pakietu: " + pak);
+            this.packetByIteration.add(counter+1, pak);
         }
     }
 
@@ -276,11 +321,15 @@ public class WariantAAlt {
         return (Q / (2 * ni)) * (y - 0.0) * (y - 0.9);
     }
 
-    public MatrixSpace getMatrixSpace() {
-        return matrixSpace;
-    }
-
     public DensityBuffer getDensityBuffer() {
         return densityBuffer;
+    }
+
+    public IterationIntegralContainer getIntegralIByIteration() {
+        return integralIByIteration;
+    }
+
+    public IterationIntegralContainer getPacketByIteration() {
+        return packetByIteration;
     }
 }

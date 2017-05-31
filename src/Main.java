@@ -16,10 +16,18 @@ public class Main {
                 0.01
         );
         WariantAAlt wariantAAlt1 = new WariantAAlt(matrixSpace1);
-        wariantAAlt1.executeLeapFrog(20, 25);
+        wariantAAlt1.executeLeapFrog(80, 40);
 
         CustomFileWriter.writeToFile(
                 wariantAAlt1.getDensityBuffer().toString(), "zad1_den.dat"
+        );
+
+        CustomFileWriter.writeToFile(
+                wariantAAlt1.getIntegralIByIteration().toString(), "zad1_I.dat"
+        );
+
+        CustomFileWriter.writeToFile(
+                wariantAAlt1.getPacketByIteration().toString(), "zad1_packet.dat"
         );
 
     }
@@ -33,10 +41,18 @@ public class Main {
                 0.01
         );
         WariantAAlt wariantAAlt1 = new WariantAAlt(matrixSpace1, "predkosc.dat");
-        wariantAAlt1.executeLeapFrog(20, 25);
+        wariantAAlt1.executeLeapFrog(20.0, 25);
 
         CustomFileWriter.writeToFile(
                 wariantAAlt1.getDensityBuffer().toString(), "zad2_den.dat"
+        );
+
+        CustomFileWriter.writeToFile(
+                wariantAAlt1.getIntegralIByIteration().toString(), "zad2_I.dat"
+        );
+
+        CustomFileWriter.writeToFile(
+                wariantAAlt1.getPacketByIteration().toString(), "zad2_packet.dat"
         );
 
     }
@@ -54,14 +70,22 @@ public class Main {
         CustomFileWriter.writeToFile(
                 wariantAAlt1.getDensityBuffer().toString(), "zad3_den.dat"
         );
+
+        CustomFileWriter.writeToFile(
+                wariantAAlt1.getIntegralIByIteration().toString(), "zad3_I.dat"
+        );
+
+        CustomFileWriter.writeToFile(
+                wariantAAlt1.getPacketByIteration().toString(), "zad3_packet.dat"
+        );
     }
 
     public static void main(String[] args) {
 
 
-//        zadanie1();
+        zadanie1();
 
-//        zadanie2();
+        zadanie2();
 
         zadanie3();
         System.out.println("Hello World!");
